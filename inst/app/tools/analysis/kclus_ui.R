@@ -2,7 +2,7 @@
 # K-clustering
 ###############################################################
 
-km_plots <- c("None" = "none", "Density" = "density", "Bar" = "bar", "Scatter" = "scatter")
+km_plots <- c("None" = "none", "Density" = "density", "Bar" = "bar", "Scatter" = "scatter", "Pairwise" = "pairwise")
 km_algorithm <- c("K-means" = "kmeans", "K-proto" = "kproto")
 
 # list of function arguments
@@ -51,7 +51,7 @@ output$ui_km_store_name <- renderUI({
   textInput("km_store_name", NULL, "", placeholder = "Provide variable name")
 })
 
-## add a spinning refresh icon if the tabel needs to be (re)calculated
+## add a spinning refresh icon if the table needs to be (re)calculated
 run_refresh(km_args, "km", init = "vars", tabs = "tabs_kclus", label = "Estimate model", relabel = "Re-estimate model")
 
 output$ui_kclus <- renderUI({
@@ -139,7 +139,8 @@ output$ui_kclus <- renderUI({
 
 km_plot <- eventReactive(c(input$km_run, input$km_plots), {
   if (.km_available() == "available" && !is.empty(input$km_plots, "none")) {
-    list(plot_width = 750, plot_height = 300 * ceiling(length(input$km_vars) / 2))
+    list(plot_width = if (input$km_plots == "pairwise") 750 else 650,
+         plot_height = if (input$km_plots == "pairwise") 750 else 300 * ceiling(length(input$km_vars) / 2))
   }
 })
 
@@ -156,6 +157,7 @@ km_plot_height <- function() {
       if (is.list(.)) .$plot_height else 400
     }
 }
+
 
 # output is called from the main radiant ui.R
 output$kclus <- renderUI({
