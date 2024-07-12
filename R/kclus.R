@@ -296,9 +296,8 @@ plot.kclus <- function(x, plots = "density", shiny = FALSE, custom = FALSE, ...)
       if (custom) {
         return(p)
       } else {
-        print(p)
+        return(p)
       }
-      return(invisible())
     } else {
       warning("Not enough variables to create a Pairwise scatter plot.")
     }
@@ -308,11 +307,11 @@ plot.kclus <- function(x, plots = "density", shiny = FALSE, custom = FALSE, ...)
     if (custom) {
       if (length(plot_list) == 1) plot_list[[1]] else plot_list
     } else {
-      patchwork::wrap_plots(plot_list, ncol = min(length(plot_list), 2)) %>%
-        (function(x) if (isTRUE(shiny)) x else print(x))
+      return(patchwork::wrap_plots(plot_list, ncol = min(length(plot_list), 2)))
     }
   }
 }
+
 
 #' Add a cluster membership variable to the active dataset
 #'
