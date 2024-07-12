@@ -194,7 +194,7 @@ summary.kclus <- function(object, dec = 2, ...) {
 #' @details See \url{https://radiant-rstats.github.io/docs/multivariate/kclus.html} for an example in Radiant
 #'
 #' @param x Return value from \code{\link{kclus}}
-#' @param plots One of "density", "bar", or "scatter")
+#' @param plots One of "density", "bar", "scatter", or "pairwise"
 #' @param shiny Did the function call originate inside a shiny app
 #' @param custom Logical (TRUE, FALSE) to indicate if ggplot object (or list of ggplot objects) should be returned. This option can be used to customize plots (e.g., add a title, change x and y labels, etc.). See examples and \url{https://ggplot2.tidyverse.org/} for options.
 #' @param ... further arguments passed to or from other methods
@@ -207,6 +207,7 @@ summary.kclus <- function(object, dec = 2, ...) {
 #' @seealso \code{\link{store.kclus}} to add cluster membership to the selected dataset
 #'
 #' @importFrom rlang .data
+#' @importFrom GGally ggpairs
 #'
 #' @export
 plot.kclus <- function(x, plots = "density", shiny = FALSE, custom = FALSE, ...) {
@@ -215,7 +216,7 @@ plot.kclus <- function(x, plots = "density", shiny = FALSE, custom = FALSE, ...)
 
   fct_plot <- function(dataset, var1, var2, color = "black", alpha = 0.5) {
     tab <- as.data.frame(table(dataset[[var1]], dataset[[var2]]))
-    ggplot(tab, aes(x = .data$Var2, y = .data$Freq, fill = .data$Var1)) +
+    ggplot(tab, aes(.data[[var2]], .data$Freq, fill = .data[[var1]])) +
       geom_bar(stat = "identity", position = "fill", alpha = alpha, color = color) +
       scale_y_continuous(labels = scales::percent) +
       labs(y = "", x = var2, fill = var1)
@@ -225,7 +226,7 @@ plot.kclus <- function(x, plots = "density", shiny = FALSE, custom = FALSE, ...)
   if ("density" %in% plots) {
     for (var in vars) {
       plot_list[[paste0("dens_", var)]] <- if (is.numeric(x$dataset[[var]])) {
-        ggplot(x$dataset, aes(x = .data[[var]], fill = .data$Cluster)) +
+        ggplot(x$dataset, aes(.data[[var]], fill = .data$Cluster)) +
           geom_density(adjust = 2.5, alpha = 0.3) +
           labs(y = "") +
           theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
@@ -242,19 +243,18 @@ plot.kclus <- function(x, plots = "density", shiny = FALSE, custom = FALSE, ...)
     for (var in vars) {
       plot_list[[paste0("bar_", var)]] <- if (is.numeric(x$dataset[[var]])) {
         dat_summary <-
-          select_at(x$dataset, .vars = c(var, "Cluster")) %>%
-          group_by_at(.vars = "Cluster") %>%
-          summarise_all(
-            list(
-              cent = mean,
-              n = length,
-              sd = sd,
-              se = se,
-              me = ~ me_calc(se, n, .95)
-            )
+          x$dataset %>%
+          select(all_of(c(var, "Cluster"))) %>%
+          group_by(Cluster) %>%
+          summarise(
+            cent = mean(.data[[var]]),
+            n = n(),
+            sd = sd(.data[[var]]),
+            se = sd / sqrt(n),
+            me = me_calc(se, n, .95)
           )
 
-        ggplot(dat_summary, aes(x = .data$Cluster, y = .data$cent, fill = .data$Cluster)) +
+        ggplot(dat_summary, aes(x = Cluster, y = cent, fill = Cluster)) +
           geom_bar(stat = "identity", alpha = 0.5) +
           geom_errorbar(width = .1, aes(ymin = cent - me, ymax = cent + me)) +
           geom_errorbar(width = .05, aes(ymin = cent - se, ymax = cent + se), color = "blue") +
@@ -282,6 +282,27 @@ plot.kclus <- function(x, plots = "density", shiny = FALSE, custom = FALSE, ...)
       }
     }
   }
+  if ("pairwise" %in% plots) {
+    if (length(vars) >= 2) {
+      p <- GGally::ggpairs(x$dataset,
+                           columns = vars,
+                           mapping = aes(color = Cluster),
+                           upper = list(continuous = wrap("cor", size = 4)),
+                           lower = list(continuous = wrap("points", alpha = 0.6)),
+                           diag = list(continuous = wrap("densityDiag", alpha = 0.3))
+      ) +
+        theme_minimal() +
+        labs(title = "Pairwise Scatter plot with K-means clustering")
+      if (custom) {
+        return(p)
+      } else {
+        print(p)
+      }
+      return(invisible())
+    } else {
+      warning("Not enough variables to create a Pairwise scatter plot.")
+    }
+  }
 
   if (length(plot_list) > 0) {
     if (custom) {
@@ -295,7 +316,7 @@ plot.kclus <- function(x, plots = "density", shiny = FALSE, custom = FALSE, ...)
 
 #' Add a cluster membership variable to the active dataset
 #'
-#' @details See \url{https://radiant-rstats.github.io/docs/multivariate/kclus.html} for an example in Radiant
+#' @details See \url{httpsiant-rstats.github.io/docs/multivariate/kclus.html} for an example in Radiant
 #'
 #' @param dataset Dataset to append to cluster membership variable to
 #' @param object Return value from \code{\link{kclus}}
