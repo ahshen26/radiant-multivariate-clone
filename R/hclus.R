@@ -123,9 +123,10 @@ summary.hclus <- function(object, ...) {
 #' @seealso \code{\link{summary.hclus}} to summarize results
 #'
 #' @export
-plot.hclus <- function(x, plots = c("scree", "change"),
+plot.hclus <- function(x, plots = c("scree", "change", "pairwise_hc"),
                        cutoff = 0.05,
-                       shiny = FALSE, custom = FALSE, ...) {
+                       shiny = FALSE, custom = FALSE,
+                       nr_clusters = 3, ...) {
   if (is.empty(plots)) {
     return(invisible())
   }
@@ -182,36 +183,61 @@ plot.hclus <- function(x, plots = c("scree", "change"),
       xlab <- "When dendrogram is selected no other plots can be shown.\nCall the plot function separately in Report > Rmd to view different plot types."
     }
 
-    ## trying out ggraph - looks great but dendrogram very slow for larger datasets
-    # install.packages("ggraph")
-    # library(ggraph)
-    # https://www.r-graph-gallery.com/335-custom-ggraph-dendrogram/
-    # plot_list[["dendro"]] <- ggraph(hc, 'dendrogram', circular = FALSE) +
-    # geom_edge_elbow()
-
     if (cutoff == 0) {
       plot(hc, main = "Dendrogram", xlab = xlab, ylab = "Within-cluster heterogeneity")
-      # plot_list[["dendro"]] <- patchwork::wrap_elements(~ plot(hc), clip = FALSE)
     } else {
       plot(
         hc,
         ylim = c(cutoff, 1), leaflab = "none",
         main = "Cutoff dendrogram", xlab = xlab, ylab = "Within-cluster heterogeneity"
       )
-      # plot_list[["dendro"]] <- patchwork::wrap_elements(~ plot(hc), clip = FALSE)
     }
     return(invisible())
   }
 
+  if ("pairwise_hc" %in% plots) {
+    clusters <- cutree(x$hc_out, k = nr_clusters)
+    x$dataset$Cluster <- as.factor(clusters)
+    vars <- colnames(x$dataset) %>% .[-length(.)]
+    if (length(vars) >= 2) {
+      p <- GGally::ggpairs(x$dataset,
+                           columns = vars,
+                           mapping = aes(color = Cluster),
+                           upper = list(continuous = wrap("cor", size = 4)),
+                           lower = list(continuous = wrap("points", alpha = 0.6)),
+                           diag = list(continuous = wrap("densityDiag", alpha = 0.3))
+      ) +
+        theme_minimal() +
+        labs(title = "Pairwise Scatter plot with Hierarchical clustering")
+      if (custom) {
+        return(p)
+      } else {
+        for (i in 1:p$nrow) {
+          for (j in 1:p$ncol) {
+            plot_list <- c(plot_list, list(p[i, j]))
+          }
+        }
+      }
+    } else {
+      warning("Not enough variables to create a Pairwise scatter plot.")
+    }
+  }
+
   if (length(plot_list) > 0) {
     if (custom) {
-      if (length(plot_list) == 1) plot_list[[1]] else plot_list
+      if (length(plot_list) == 1) return(plot_list[[1]]) else return(plot_list)
     } else {
-      patchwork::wrap_plots(plot_list, ncol = 1) %>%
-        (function(x) if (isTRUE(shiny)) x else print(x))
+      plot_output <- patchwork::wrap_plots(plot_list, ncol = min(length(plot_list), 2))
+      if (isTRUE(shiny)) {
+        return(plot_output)
+      } else {
+        print(plot_output)
+        return(invisible())
+      }
     }
   }
 }
+
 
 #' Add a cluster membership variable to the active dataset
 #'
@@ -240,3 +266,4 @@ store.hclus <- function(dataset, object, nr_clus = 2, name = "", ...) {
   dataset[[name]] <- as.factor(hm)
   dataset
 }
+
