@@ -10,7 +10,7 @@ hc_distance <- c(
   "Maximum" = "maximum", "Minkowski" = "minkowski"
 )
 
-hc_plots <- c("Scree" = "scree", "Change" = "change", "Dendrogram" = "dendro")
+hc_plots <- c("Scree" = "scree", "Change" = "change", "Dendrogram" = "dendro", "Pairwise" = "pairwise_hc")
 
 ## list of function arguments
 hc_args <- as.list(formals(hclus))
@@ -95,6 +95,14 @@ output$ui_hclus <- renderUI({
           plugins = list("remove_button", "drag_drop")
         )
       ),
+      conditionalPanel(
+        condition = "input.hc_plots.includes('pairwise_hc')",
+        numericInput(
+          "hc_nr_clus", "Number of clusters:",
+          min = 2,
+          value = state_init("hc_nr_clus", 2)
+        )
+      ),
       with(tags, table(
         tr(
           td(numericInput(
@@ -115,11 +123,6 @@ output$ui_hclus <- renderUI({
     wellPanel(
       conditionalPanel(
         condition = "input.hc_vars != null",
-        numericInput(
-          "hc_nr_clus", "Number of clusters:",
-          min = 2,
-          value = state_init("hc_nr_clus", 2)
-        ),
         HTML("<label>Store cluster membership:</label>"),
         tags$table(
           tags$td(uiOutput("ui_hc_store_name")),
@@ -216,7 +219,7 @@ output$hclus <- renderUI({
 
 .plot_hclus <- eventReactive(
   {
-    c(input$hc_run, input$hc_plots, input$hc_cutoff)
+    c(input$hc_run, input$hc_plots, input$hc_cutoff, input$hc_nr_clus)
   },
   {
     if (length(input$hc_plots) > 1 && "dendro" %in% input$hc_plots) {
@@ -224,7 +227,7 @@ output$hclus <- renderUI({
     } else {
       withProgress(
         message = "Generating cluster plot", value = 1,
-        capture_plot(plot(.hclus(), plots = input$hc_plots, cutoff = input$hc_cutoff))
+        capture_plot(plot(.hclus(), plots = input$hc_plots, cutoff = input$hc_cutoff, nr_clusters = input$hc_nr_clus))
       )
     }
   }
