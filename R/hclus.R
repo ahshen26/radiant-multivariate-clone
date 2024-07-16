@@ -212,11 +212,7 @@ plot.hclus <- function(x, plots = c("scree", "change", "pairwise_hc"),
       if (custom) {
         return(p)
       } else {
-        for (i in 1:p$nrow) {
-          for (j in 1:p$ncol) {
-            plot_list <- c(plot_list, list(p[i, j]))
-          }
-        }
+        return(p)
       }
     } else {
       warning("Not enough variables to create a Pairwise scatter plot.")
@@ -237,7 +233,6 @@ plot.hclus <- function(x, plots = c("scree", "change", "pairwise_hc"),
     }
   }
 }
-
 
 #' Add a cluster membership variable to the active dataset
 #'
@@ -266,4 +261,5 @@ store.hclus <- function(dataset, object, nr_clus = 2, name = "", ...) {
   dataset[[name]] <- as.factor(hm)
   dataset
 }
+
 
