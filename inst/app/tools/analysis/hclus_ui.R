@@ -150,9 +150,9 @@ hc_plot <- reactive({
   req(plots)
   ph <- plots %>%
     {
-      if (length(.) == 1 && . == "dendro") 800 else 400
+      if (length(.) == 1 && . == "dendro") 800 else if ("pairwise_hc" %in% .) 1000 else 400
     }
-  pw <- if (!is.empty(plots) && length(plots) == 1 && plots == "dendro") 900 else 650
+  pw <- if (!is.empty(plots) && length(plots) == 1 && plots == "dendro") 900 else if ("pairwise_hc" %in% plots) 1200 else 650
   list(plot_width = pw, plot_height = ph * length(plots))
 })
 
@@ -169,6 +169,7 @@ hc_plot_height <- function() {
       if (is.list(.)) .$plot_height else 400
     }
 }
+
 
 ## output is called from the main radiant ui.R
 output$hclus <- renderUI({
