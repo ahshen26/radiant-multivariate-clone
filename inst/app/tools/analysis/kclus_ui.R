@@ -58,14 +58,14 @@ output$ui_kclus <- renderUI({
   req(input$dataset)
   tagList(
     conditionalPanel(
-      condition = "input.tabs_kclus == 'Summary'",
+      condition = "input.tabs_kclus == 'Model Summary'",
       wellPanel(
         actionButton("km_run", "Estimate model", width = "100%", icon = icon("play", verify_fa = FALSE), class = "btn-success")
       )
     ),
     wellPanel(
       conditionalPanel(
-        condition = "input.tabs_kclus == 'Summary'",
+        condition = "input.tabs_kclus == 'Model Summary'",
         selectInput(
           "km_fun",
           label = "Algorithm:", choices = km_algorithm,
@@ -120,7 +120,7 @@ output$ui_kclus <- renderUI({
         )
       ),
       conditionalPanel(
-        condition = "input.tabs_kclus == 'Plot'",
+        condition = "input.tabs_kclus == 'Model Performance Plots'",
         selectInput(
           "km_plots",
           label = "Plot(s):", choices = km_plots,
@@ -167,21 +167,21 @@ output$kclus <- renderUI({
     width_fun = "km_plot_width",
     height_fun = "km_plot_height"
   )
-
+  
   km_output_panels <- tabsetPanel(
     id = "tabs_kclus",
     tabPanel(
-      "Summary",
+      "Model Summary",
       download_link("dl_km_means"), br(),
       verbatimTextOutput("summary_kclus")
     ),
     tabPanel(
-      "Plot",
+      "Model Performance Plots",
       download_link("dlp_kclus"),
       plotOutput("plot_kclus", width = "100%", height = "100%")
     )
   )
-
+  
   stat_tab_panel(
     menu = "Multivariate > Cluster",
     tool = "K-clustering",
@@ -238,7 +238,7 @@ kclus_report <- function() {
     outputs <- c("summary")
     figs <- FALSE
   }
-
+  
   if (!is.empty(input$km_store_name)) {
     fixed <- fix_names(input$km_store_name)
     updateTextInput(session, "km_store_name", value = fixed)
@@ -246,10 +246,10 @@ kclus_report <- function() {
   } else {
     xcmd <- ""
   }
-
+  
   kmi <- km_inputs()
   if (input$km_fun == "kmeans") kmi$lambda <- NULL
-
+  
   update_report(
     inp_main = clean_args(kmi, km_args),
     fun_name = "kclus",
