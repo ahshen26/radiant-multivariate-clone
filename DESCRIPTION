@@ -28,7 +28,8 @@ Imports:
     polycor (>= 0.7.10),
     gower (>= 0.2.1),
     clustMixType (>= 0.2.1),
-    patchwork (>= 1.0.0)
+    patchwork (>= 1.0.0),
+    GGally
 Suggests:
     testthat (>= 2.0.0),
     pkgdown (>= 1.1.0)
